@@ -1,18 +1,29 @@
-const { BasePage } = require('./BasePage');
+import { Page, expect } from '@playwright/test';
 
-class LoginPage extends BasePage {
-  constructor(page) {
-    super(page);
-    this.emailInput = 'input[placeholder="Enter email"]';
-    this.passwordInput = 'input[placeholder="Enter password"]';
-    this.loginButton = 'button:has-text("Login")';
+export class LoginPage {
+  constructor(private page: Page) {}
+
+  async gotoLogin() {
+    await this.page.goto('https://pass-the-note-app.vercel.app/login', {
+      waitUntil: 'networkidle'
+    });
+
+    // Ensure page is ready
+    await this.page.waitForSelector('input[name="email"]', { timeout: 15000 });
   }
 
-  async login(email, password) {
-    await this.fill(this.emailInput, email);
-    await this.fill(this.passwordInput, password);
-    await this.click(this.loginButton);
+  async login(email: string, password: string) {
+    await this.gotoLogin();
+
+    await this.page.fill('input[name="email"]', email);
+    await this.page.fill('input[name="password"]', password);
+
+    await Promise.all([
+      this.page.waitForNavigation({ waitUntil: 'networkidle' }),
+      this.page.click('button[type="submit"]')
+    ]);
+
+    // Verify login success
+    await expect(this.page).toHaveURL(/dashboard/i);
   }
 }
-
-module.exports = { LoginPage };
